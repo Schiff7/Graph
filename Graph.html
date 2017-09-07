@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style type="text/css">
+    * {
+      overflow: hidden;
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    .interact {
+      position: absolute;
+    }
+    .interact span {
+      display: block;
+      height: 25px;
+      user-select: none;
+    }
+    .interact div {
+      padding: 5px;
+    }
+    .interact input {
+      height: 25px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .interact button {
+      color: #fff;
+      border-radius: 3px;
+      padding: 5px 10px;
+      font-size: 12px;
+      line-height: 1.5;
+      cursor: pointer;
+      user-select: none;
+    }
+    #submit {
+      background-color: #337ab7;
+      border: 1px solid #ffffff;
+    }
+    #submit:hover {
+      background-color: #245580;
+    }
+    #surprise {
+      border: 1px solid #ffffff;
+      background-color: #d9534f;
+    }
+    #surprise:hover {
+      background-color: #b92c28;
+    }
+    #help {
+      border: 1px solid #ffffff;
+      background-color: #5cb85c;
+    }
+    #help:hover {
+      background-color: #4cae4c;
+    }
+    .help {
+      position: fixed;
+      top: 0;
+      right: 0;
+      transition: all .3s;
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+<div class="interact">
+  <div>
+    <span>SET</span>
+    <input type="text" id="set" value="1,2,3">
+  </div>
+  <div>
+    <span>GROUP</span>
+    <input type="text" id="group" value="1,12,123,132,23,13">
+  </div>
+  <div>
+    <span>SUBGROUP</span>
+    <input type="text" id="subGroup" value="12,132,13">
+  </div>
+  <div>
+    <span>INITIAL SCALE</span>
+    <input type="text" id="scale" value="100">
+  </div>
+  <div>
+    <button id="submit">Submit</button>
+    <button id="surprise">Surprise</button>
+    <button id="help">Help</button>
+  </div>
+  <div id="palette">
+  </div>
+</div>
+<div class="help">
+    <p>考虑集合S上的置换群G(X,*), 其中“*”为置换的乘法运算,集合A为X的子集,求Cayley图C<sub>G</sub>(A).</p>
+    <p>Submit ==> 在SET中输入S,在GROUP中输入X(X中置换采用二元置换的循环表示),在SUBGROUP中输入A,格式如示例所示,注意全角与半角符号.</p>
+    <p>Surprise ==> 生成以SET框中的输入为元素的集合上的对称群,并生成该群上的Cayley图,此时GROUP输入框的数据将被自动填充.</p>
+</div>
+<canvas id="canvas"></canvas>
+<script type="text/javascript">
+// Canvas.
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+// Object Vertex.
+var Vertex = function(x, y, radius, value, oldValue) {
+  this.value = value;
+  this.oldValue = oldValue;
+  this.x = x;
+  this.y = y;
+  this.radius = radius;
+  this.color = 'grey'
+  this.movable = false;
+  this.draw = function() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
+    ctx.closePath();
+    ctx.strokeText(this.oldValue,this.x + 10, this.y - 10);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+  }
+}
+// Object Edge.
+var Edge = function(start, end, color) {
+  this.start = start;
+  this.end = end;
+  this.color = color;
+  this.draw = function() {
+    this.sin = Math.sin(Math.atan((end.y - start.y) / (end.x - start.x)));
+    this.cos = Math.cos(Math.atan((end.y - start.y) / (end.x - start.x)));
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+  }
+  this.drawWithArrow = function() {
+    this.sin = Math.sin(Math.atan((end.y - start.y) / (end.x - start.x)));
+    this.cos = Math.cos(Math.atan((end.y - start.y) / (end.x - start.x)));
+    ctx.strokeStyle = this.color;
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+    ctx.stroke();
+    var endRadians=Math.atan((end.y - start.y) / (end.x - start.x));
+    endRadians+=((end.x >= start.x) ? 90 : -90) * Math.PI / 180;
+    ctx.save();
+    ctx.beginPath();
+    ctx.translate(end.x,end.y);
+    ctx.rotate(endRadians);
+    ctx.moveTo(0,0);
+    ctx.lineTo(3,15);
+    ctx.lineTo(-3,15);
+    ctx.closePath();
+    ctx.restore();
+    ctx.stroke();
+    ctx.strokeStyle = '#000000';
+  }
+}
+
+
+// Transfer the cyclic permutation expression to another expression that can be easily oprated by the program.
+function transfer (arr, str) {
+  var result = '';
+  var _str = str.split('|');
+  var i = 0, j = 0;
+  for(; i < arr.length; i++) {
+    if(i < str.length) {
+      if(arr.indexOf(str[i]) === -1) {
+        result = '';
+        break;
+      }
+    }
+    if(str.search(arr[i]) == -1){
+      result += arr[i];
+      continue;
+    }
+    for(; j < _str.length; j++){
+      if(_str[j].search(arr[i]) != -1) {
+        break;
+      }
+    }
+    if(_str[j].search(arr[i]) == _str[j].length-1) {
+      result +=_str[j].charAt(0);
+      continue;
+    }
+    result += _str[j].charAt(_str[j].search(arr[i]) + 1);
+  }
+  return result;
+}
+
+// Oposite to the transfer();
+function reverse (_arr, str) {
+  var arr = _arr.slice(0);
+  if(arr.join('') === str) {
+    return 1;
+  }
+  var result = '';
+  var i = 0;
+  var p = '', q = '';
+  var unFound = true;
+  while(arr.length > 0) {
+    i = 0;
+    if(arr[i] === str[i]){
+        str = str.replace(str[i], '');
+        arr.splice(i, 1);
+        continue;
+    }else if(unFound === false) {
+      result += '|';
+    }
+    p = arr[0];
+    unFound = true;
+    while(unFound){
+      result += arr[i];
+      if((q = str[arr.indexOf(str[i])]) === p){
+        result += str[i];
+        unFound = false;
+      }
+      str = str.replace(str[i], '');
+      arr.splice(i, 1);
+      i = str.search(q);
+      if(unFound === false) {
+        str = str.replace(str[i], '');
+        arr.splice(i, 1);
+      }
+    }
+  }
+  return result;
+}
+
+
+// Operation of the symmetric group.
+function opt(arr, l, r) {
+  var _l = '';
+  var result = '';
+  for(i = 0; i <l.length; i++) {
+    _l += arr[l.search(arr[i])];
+  }
+  for(i = 0; i < l.length; i++) {
+    result += _l.charAt(arr.indexOf(r.charAt(i)));
+  }
+  return result;
+}
+
+// To get a symetric group by providng a string.
+// AKA to get all the arranges of a string.
+// ... From the internet.
+function charsMap(o){
+    o = (o+"").replace(/(\w)(?=\w*\1)/g,"").replace(/\s+/g,""); //去除重复字符以及空白字符
+    switch(o.length){
+        case 0:
+        case 1: return [o];
+        default:
+            var p = /^(\S+?)(\S)$/.exec(o), //使用正则将字符串分割为n-1长度字符串，以及最后一个字符串。
+                _r = charsMap(p[1]),
+                l = p[2],
+                r = [];
+            for (var i = 0; i < _r.length; i++) {
+                var t = _r[i];
+                for (var j = 0, len = t.length; j <= len; j++) {
+                    r.push( t.replace( new RegExp("^(\\S{"+j+"})(\\S{"+(len-j)+"})$"), "$1"+l+"$2" ) );
+                    //字符插入位置从开头前到结尾后,正则的作用相当于Array.splice(j,0,l); 在下标j的位置插入一个字符l
+                }
+            }
+            return r;
+    }
+}
+
+// Clear the canvas.
+function clear() {
+  // ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  // ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+}
+
+// Original point of canvas.
+var O = {
+  x: window.innerWidth/2,
+  y: window.innerHeight/2
+}
+// Array of vertexes and Array of edges.
+var vertexes = [];
+var edges = [];
+
+// Get random color.
+var getRandomColor = function(){    
+  return (function(m,s,c){    
+    return (c ? arguments.callee(m,s,c-1) : '#') +    
+      s[m.floor(m.random() * 16)]    
+  })(Math,'0123456789abcdef',5)    
+};
+
+
+
+// Draw the initial graph.
+function run(set, group, subGroup) {
+  // Scale of graph.
+  var r = document.getElementById('scale').value;
+
+  clear();
+  vertexes = [];
+  edges = [];
+  var checkResult = true;
+  const _set = set.split(',');
+  var _group = [];
+  var __group = [];
+  const __subGroup = subGroup.split(',');
+  const _subGroup = __subGroup.map((x) => {
+    return transfer(_set, x);
+  });
+
+  if(typeof group === 'string'){
+    _group = group.split(',').map((x) => {
+      return transfer(_set, x);
+    });
+    __group = group.split(',');
+    // Input is valid or not;
+    var symGroup = charsMap(set.replace(/,/g ,''));
+    for(var k = 0; k < _group.length; k++ ) {
+      if(symGroup.indexOf(_group[k]) === -1) {
+        checkResult = false;
+        break;
+      }
+      if(k < _subGroup.length) {
+        if(symGroup.indexOf(_subGroup[k]) === -1) {
+          checkResult = false;
+          break;
+        }
+      }
+    }
+
+
+  } else {
+    _group = group;
+    __group = group.map((x) => {
+      return reverse(_set, x);
+    });
+    document.getElementById('group').value = __group;
+    
+    // Input is valid or not;
+    var symGroup = group;
+    console.log(group);
+    console.log(_subGroup);
+    for(var k = 0; k < _subGroup.length; k++ ) {
+      if(symGroup.indexOf(_subGroup[k]) === -1) {
+        checkResult = false;
+        break;
+      }
+    }
+
+  }
+  console.log(checkResult);
+  if(!checkResult) {
+    alert('Wrong input.');
+    return 0;
+  }
+
+  var Count = _group.length;
+  var InteriorAngle = 2*Math.PI/Count;
+  var palette = [];
+  for(var i = 0; i < __group.length; i++) {
+    palette.push(getRandomColor());
+  }
+
+  for(var l = 0; l < Count; l++) {
+    vertexes.push(new Vertex(O.x + r*Math.sin(l*InteriorAngle), O.y - r*Math.cos(l*InteriorAngle), 10, _group[l], __group[l]));
+    vertexes[l].draw();
+  }
+
+  unselectedVertexes = vertexes.slice(0);
+  var v = 0;
+  var newLength = 0;
+  for(var m = 0; m < Count; m++) {
+    for(var n = m + 1; n < Count; n++) {
+      if((v = _subGroup.indexOf(opt(_set, _group[m], _group[n]))) !== -1){
+        newLength = edges.push(new Edge(vertexes[m],vertexes[n],palette[v]));
+        edges[newLength-1].drawWithArrow();
+      }
+      if((v = _subGroup.indexOf(opt(_set, _group[n], _group[m]))) !== -1){
+        newLength = edges.push(new Edge(vertexes[n],vertexes[m],palette[v]));
+        edges[newLength-1].drawWithArrow();
+      }
+    }
+  }
+  // Palette
+  document.getElementById('palette').innerHTML = '';
+  for(var j = 0; j < __subGroup.length; j++) {
+    var div = document.createElement('div');
+    var span = document.createElement('span');
+    var innerDiv = document.createElement('div');
+    div.className = 'label';
+    span.innerText = __subGroup[j];
+    innerDiv.style.backgroundColor = palette[j];
+    div.appendChild(span);
+    div.appendChild(innerDiv);
+    document.getElementById('palette').appendChild(div);
+  }
+}
+
+
+// Submit button oncick event binding.
+document.getElementById('submit').addEventListener('click',function() {
+  var set = document.getElementById('set').value;
+  var group = document.getElementById('group').value;
+  var subGroup = document.getElementById('subGroup').value;
+  run(set, group, subGroup);
+},false);
+
+// Surprise button onclick event binding.
+document.getElementById('surprise').addEventListener('click', function() {
+  var set = document.getElementById('set').value;
+  var group = charsMap(set.replace(/,/g ,''));
+  var subGroup = document.getElementById('subGroup').value;
+  run(set, group, subGroup);
+},false);
+
+// Handle of selected vertex and Array of unselected vertexes.
+var selectedVertex = null;
+var unselectedVertexes = [];
+var copyOfVertexes = [];
+
+var shift = {
+  x: 0,
+  y: 0,
+  movable: false
+}
+
+// Handling mousedown event. 
+canvas.addEventListener('mousedown', function(event) {
+  const {clientX, clientY} = event;
+  copyOfVertexes = [];
+  for(var i in vertexes){
+    if(Math.sqrt(Math.pow(clientX - vertexes[i].x, 2) + Math.pow(clientY - vertexes[i].y, 2)) < vertexes[i].radius * 1.5){
+      vertexes[i].movable = true;
+      selectedVertex = vertexes[i];
+      unselectedVertexes.splice(i,1);
+      break;
+    }
+    copyOfVertexes.push({x: vertexes[i].x, y: vertexes[i].y});
+    if(i == vertexes.length - 1){
+      shift = {x: clientX, y: clientY, movable: true};
+    }
+  }
+});
+// Handing mousemove event.
+canvas.addEventListener('mousemove', function(event) {
+  const {clientX, clientY} = event;
+  if (selectedVertex !== null && selectedVertex.movable) {
+    clear();
+    selectedVertex.x = clientX;
+    selectedVertex.y = clientY;
+    selectedVertex.draw();
+    for(var j in unselectedVertexes) {
+      unselectedVertexes[j].draw();
+    }
+    for(var k in edges) {
+      edges[k].drawWithArrow();
+    }
+  }
+  if(shift.movable) {
+    clear();
+    var deltaX = clientX - shift.x;
+    var deltaY = clientY - shift.y;
+    for(var j in unselectedVertexes) {
+      unselectedVertexes[j].x = copyOfVertexes[j].x;
+      unselectedVertexes[j].x += deltaX;
+      unselectedVertexes[j].y = copyOfVertexes[j].y;
+      unselectedVertexes[j].y += deltaY;
+      unselectedVertexes[j].draw();
+    }
+    for(var k in edges) {
+      edges[k].drawWithArrow();
+    }
+  }
+});
+
+//Handing mouseup event.
+canvas.addEventListener('mouseup', function(event) {
+  if(selectedVertex !== null){
+    selectedVertex.movable = false;
+    selectedVertex = null;
+    unselectedVertexes = vertexes.slice(0);
+  }
+  shift.movable = false;
+});
+
+// canvas.addEventListener('mousewheel', function(event) {
+// })
+var visible = false;
+document.querySelector('#help').addEventListener('click', function() {
+  if(visible){
+    document.querySelector('.help').style.opacity = 0;
+    visible = !visible;
+  }else{
+    document.querySelector('.help').style.opacity = 1;
+    visible = !visible;
+  }
+})
+</script>
+</body>
+</html>
