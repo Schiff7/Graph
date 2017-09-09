@@ -4,10 +4,12 @@
   <title></title>
   <style type="text/css">
     * {
-      overflow: hidden;
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+    html {
+      overflow: hidden;
     }
     .interact {
       position: absolute;
@@ -60,7 +62,11 @@
       top: 0;
       right: 0;
       transition: all .3s;
-      opacity: 0;
+      display: none;
+    }
+    #palette {
+      height: 300px;
+      overflow-y: auto;
     }
   </style>
 </head>
@@ -245,31 +251,31 @@ function opt(arr, l, r) {
 // AKA to get all the arranges of a string.
 // ... From the internet.
 function charsMap(o){
-    o = (o+"").replace(/(\w)(?=\w*\1)/g,"").replace(/\s+/g,""); //去除重复字符以及空白字符
-    switch(o.length){
-        case 0:
-        case 1: return [o];
-        default:
-            var p = /^(\S+?)(\S)$/.exec(o), //使用正则将字符串分割为n-1长度字符串，以及最后一个字符串。
-                _r = charsMap(p[1]),
-                l = p[2],
-                r = [];
-            for (var i = 0; i < _r.length; i++) {
-                var t = _r[i];
-                for (var j = 0, len = t.length; j <= len; j++) {
-                    r.push( t.replace( new RegExp("^(\\S{"+j+"})(\\S{"+(len-j)+"})$"), "$1"+l+"$2" ) );
-                    //字符插入位置从开头前到结尾后,正则的作用相当于Array.splice(j,0,l); 在下标j的位置插入一个字符l
-                }
-            }
-            return r;
-    }
+  // Remove space and duplicate characters.
+  o = (o+"").replace(/(\w)(?=\w*\1)/g,"").replace(/\s+/g,"");
+  switch(o.length){
+    case 0:
+    case 1: return [o];
+    default:
+      // Reg = slice 'abcd' to 'abc' & 'd'.
+      var p = /^(\S+?)(\S)$/.exec(o),
+          _r = charsMap(p[1]),
+          l = p[2],
+          r = [];
+      for (var i = 0; i < _r.length; i++) {
+          var t = _r[i];
+          for (var j = 0, len = t.length; j <= len; j++) {
+              //Reg = Array.splice(j,0,l).
+              r.push( t.replace( new RegExp("^(\\S{"+j+"})(\\S{"+(len-j)+"})$"), "$1"+l+"$2" ) );
+          }
+      }
+      return r;
+  }
 }
 
 // Clear the canvas.
 function clear() {
-  // ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  // ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
 }
 
 // Original point of canvas.
@@ -277,6 +283,7 @@ var O = {
   x: window.innerWidth/2,
   y: window.innerHeight/2
 }
+
 // Array of vertexes and Array of edges.
 var vertexes = [];
 var edges = [];
@@ -327,8 +334,6 @@ function run(set, group, subGroup) {
         }
       }
     }
-
-
   } else {
     _group = group;
     __group = group.map((x) => {
@@ -338,8 +343,6 @@ function run(set, group, subGroup) {
     
     // Input is valid or not;
     var symGroup = group;
-    console.log(group);
-    console.log(_subGroup);
     for(var k = 0; k < _subGroup.length; k++ ) {
       if(symGroup.indexOf(_subGroup[k]) === -1) {
         checkResult = false;
@@ -348,6 +351,7 @@ function run(set, group, subGroup) {
     }
 
   }
+  // Check result to dependency of inputs.
   console.log(checkResult);
   if(!checkResult) {
     alert('Wrong input.');
@@ -402,7 +406,12 @@ document.getElementById('submit').addEventListener('click',function() {
   var set = document.getElementById('set').value;
   var group = document.getElementById('group').value;
   var subGroup = document.getElementById('subGroup').value;
-  run(set, group, subGroup);
+  if(set === '' || group === '' || subGroup === '') {
+    alert('Null input.');
+  }else {
+    run(set, group, subGroup);
+  }
+
 },false);
 
 // Surprise button onclick event binding.
@@ -410,18 +419,28 @@ document.getElementById('surprise').addEventListener('click', function() {
   var set = document.getElementById('set').value;
   var group = charsMap(set.replace(/,/g ,''));
   var subGroup = document.getElementById('subGroup').value;
-  run(set, group, subGroup);
+  if(set === '' || subGroup === '') {
+    alert('Null input.');
+  }else {
+    run(set, group, subGroup);
+  }
 },false);
 
 // Handle of selected vertex and Array of unselected vertexes.
 var selectedVertex = null;
 var unselectedVertexes = [];
 var copyOfVertexes = [];
-
+// Anchor.
 var shift = {
   x: 0,
   y: 0,
   movable: false
+}
+// Amplification coefficient.
+var muFactor = {
+  value: 1.05,
+  n: 0,
+  multiplicative:1
 }
 
 // Handling mousedown event. 
@@ -429,7 +448,7 @@ canvas.addEventListener('mousedown', function(event) {
   const {clientX, clientY} = event;
   copyOfVertexes = [];
   for(var i in vertexes){
-    if(Math.sqrt(Math.pow(clientX - vertexes[i].x, 2) + Math.pow(clientY - vertexes[i].y, 2)) < vertexes[i].radius * 1.5){
+    if(Math.sqrt(Math.pow(clientX - vertexes[i].x*(Math.pow(muFactor.value, muFactor.n)), 2) + Math.pow(clientY - vertexes[i].y*(Math.pow(muFactor.value, muFactor.n)), 2)) < vertexes[i].radius * 1.5*(Math.pow(muFactor.value, muFactor.n))){
       vertexes[i].movable = true;
       selectedVertex = vertexes[i];
       unselectedVertexes.splice(i,1);
@@ -440,10 +459,12 @@ canvas.addEventListener('mousedown', function(event) {
       shift = {x: clientX, y: clientY, movable: true};
     }
   }
-});
+}, false);
 // Handing mousemove event.
 canvas.addEventListener('mousemove', function(event) {
-  const {clientX, clientY} = event;
+  // const {clientX, clientY} = event;
+  const clientX = event.clientX/Math.pow(muFactor.value, muFactor.n);
+  const clientY = event.clientY/Math.pow(muFactor.value, muFactor.n);
   if (selectedVertex !== null && selectedVertex.movable) {
     clear();
     selectedVertex.x = clientX;
@@ -458,8 +479,8 @@ canvas.addEventListener('mousemove', function(event) {
   }
   if(shift.movable) {
     clear();
-    var deltaX = clientX - shift.x;
-    var deltaY = clientY - shift.y;
+    var deltaX = (clientX - shift.x/Math.pow(muFactor.value, muFactor.n));
+    var deltaY = (clientY - shift.y/Math.pow(muFactor.value, muFactor.n));
     for(var j in unselectedVertexes) {
       unselectedVertexes[j].x = copyOfVertexes[j].x;
       unselectedVertexes[j].x += deltaX;
@@ -471,9 +492,9 @@ canvas.addEventListener('mousemove', function(event) {
       edges[k].drawWithArrow();
     }
   }
-});
+}, false);
 
-//Handing mouseup event.
+// Handling mouseup event.
 canvas.addEventListener('mouseup', function(event) {
   if(selectedVertex !== null){
     selectedVertex.movable = false;
@@ -481,20 +502,46 @@ canvas.addEventListener('mouseup', function(event) {
     unselectedVertexes = vertexes.slice(0);
   }
   shift.movable = false;
-});
+}, false);
 
-// canvas.addEventListener('mousewheel', function(event) {
-// })
+
+// Handling mouseWheel event.
+canvas.addEventListener('mousewheel', function(event) {
+  clear();
+  if(event.deltaY < 0){
+    ctx.transform(muFactor.value,0,0,muFactor.value,0,0);
+    muFactor.n += 1;
+    for(var j in unselectedVertexes) {
+      unselectedVertexes[j].draw();
+    }
+    for(var k in edges) {
+      edges[k].drawWithArrow();
+    }
+  }else {
+    ctx.transform(1/muFactor.value,0,0,1/muFactor.value,0,0);
+    muFactor.n -= 1;
+    for(var j in unselectedVertexes) {
+      unselectedVertexes[j].draw();
+    }
+    for(var k in edges) {
+      edges[k].drawWithArrow();
+    }
+  }
+}, false);
+
+// Help button onclick event binding.
 var visible = false;
+var help = document.querySelector('.help');
 document.querySelector('#help').addEventListener('click', function() {
   if(visible){
-    document.querySelector('.help').style.opacity = 0;
+    help.style.display = 'none';
     visible = !visible;
   }else{
-    document.querySelector('.help').style.opacity = 1;
+    help.style.display = 'block';
     visible = !visible;
   }
-})
+}, false);
+
 </script>
 </body>
 </html>
