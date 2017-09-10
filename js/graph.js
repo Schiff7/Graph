@@ -14,6 +14,7 @@ var Vertex = function(x, y, radius, value, oldValue) {
   this.radius = radius;
   this.color = 'grey'
   this.movable = false;
+  // Draw vertex.
   this.draw = function() {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
@@ -29,6 +30,7 @@ var Edge = function(start, end, color) {
   this.start = start;
   this.end = end;
   this.color = color;
+  // Draw edge with no direction.
   this.draw = function() {
     this.sin = Math.sin(Math.atan((end.y - start.y) / (end.x - start.x)));
     this.cos = Math.cos(Math.atan((end.y - start.y) / (end.x - start.x)));
@@ -37,6 +39,7 @@ var Edge = function(start, end, color) {
     ctx.lineTo(end.x, end.y);
     ctx.stroke();
   }
+  // Draw edge with arrow.
   this.drawWithArrow = function() {
     this.sin = Math.sin(Math.atan((end.y - start.y) / (end.x - start.x)));
     this.cos = Math.cos(Math.atan((end.y - start.y) / (end.x - start.x)));
@@ -92,6 +95,7 @@ function transfer (arr, str) {
 
 // Oposite to the transfer();
 function reverse (_arr, str) {
+  // A copy of _arr.
   var arr = _arr.slice(0);
   if(arr.join('') === str) {
     return 1;
@@ -171,7 +175,9 @@ function charsMap(o){
 
 // Clear the canvas.
 function clear() {
-  ctx.clearRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
+  ctx.fillStyle = '#f1f1f1';
+  ctx.fillRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
+  //ctx.clearRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
 }
 
 // Original point of canvas.
@@ -189,14 +195,12 @@ var getRandomColor = function(){
   return (function(m,s,c){    
     return (c ? arguments.callee(m,s,c-1) : '#') +    
       s[m.floor(m.random() * 16)]    
-  })(Math,'0123456789abcdef',5)    
+  })(Math,'0123456789abcdef',5)
 };
-
-
 
 // Draw the initial graph.
 function run(set, group, subGroup) {
-  // Scale of graph.
+  // Initial scale of graph.
   var r = document.getElementById('scale').value;
 
   clear();
@@ -210,7 +214,8 @@ function run(set, group, subGroup) {
   const _subGroup = __subGroup.map((x) => {
     return transfer(_set, x);
   });
-
+  // Different treatment according to the type of group, which maps data 
+  // submited by the 'submit' button or 'surprise' button.
   if(typeof group === 'string'){
     _group = group.split(',').map((x) => {
       return transfer(_set, x);
@@ -247,28 +252,33 @@ function run(set, group, subGroup) {
     }
 
   }
-  // Check result to dependency of inputs.
+
+  // Check result according to dependency of inputs.
   console.log(checkResult);
   if(!checkResult) {
     alert('Wrong input.');
     return 0;
   }
-
+  // Count of vertexes.
   var Count = _group.length;
+  // Polygon interior angle.
   var InteriorAngle = 2*Math.PI/Count;
+  // Color array of edges.
   var palette = [];
+  // Fill the color array.
   for(var i = 0; i < __group.length; i++) {
     palette.push(getRandomColor());
   }
-
+  // Draw vertexes.
   for(var l = 0; l < Count; l++) {
-    vertexes.push(new Vertex(O.x + r*Math.sin(l*InteriorAngle), O.y - r*Math.cos(l*InteriorAngle), 10, _group[l], __group[l]));
+    vertexes.push(new Vertex(O.x + r*Math.sin(l*InteriorAngle), O.y - r*Math.cos(l*InteriorAngle), 9, _group[l], __group[l]));
     vertexes[l].draw();
   }
 
   unselectedVertexes = vertexes.slice(0);
   var v = 0;
   var newLength = 0;
+  // Draw edges.
   for(var m = 0; m < Count; m++) {
     for(var n = m + 1; n < Count; n++) {
       if((v = _subGroup.indexOf(opt(_set, _group[m], _group[n]))) !== -1){
@@ -302,6 +312,7 @@ document.getElementById('submit').addEventListener('click',function() {
   var set = document.getElementById('set').value;
   var group = document.getElementById('group').value;
   var subGroup = document.getElementById('subGroup').value;
+  // Null input check.
   if(set === '' || group === '' || subGroup === '') {
     alert('Null input.');
   }else {
@@ -315,6 +326,7 @@ document.getElementById('surprise').addEventListener('click', function() {
   var set = document.getElementById('set').value;
   var group = charsMap(set.replace(/,/g ,''));
   var subGroup = document.getElementById('subGroup').value;
+  // Null input check.
   if(set === '' || subGroup === '') {
     alert('Null input.');
   }else {
@@ -322,7 +334,7 @@ document.getElementById('surprise').addEventListener('click', function() {
   }
 },false);
 
-// Handle of selected vertex and Array of unselected vertexes.
+// Selected vertex and Array of unselected vertexes.
 var selectedVertex = null;
 var unselectedVertexes = [];
 var copyOfVertexes = [];
@@ -339,7 +351,7 @@ var muFactor = {
   multiplicative:1
 }
 
-// Handling mousedown event. 
+// Handle mousedown event. 
 canvas.addEventListener('mousedown', function(event) {
   const {clientX, clientY} = event;
   copyOfVertexes = [];
@@ -356,9 +368,8 @@ canvas.addEventListener('mousedown', function(event) {
     }
   }
 }, false);
-// Handing mousemove event.
+// Handle mousemove event.
 canvas.addEventListener('mousemove', function(event) {
-  // const {clientX, clientY} = event;
   const clientX = event.clientX/Math.pow(muFactor.value, muFactor.n);
   const clientY = event.clientY/Math.pow(muFactor.value, muFactor.n);
   if (selectedVertex !== null && selectedVertex.movable) {
@@ -390,7 +401,7 @@ canvas.addEventListener('mousemove', function(event) {
   }
 }, false);
 
-// Handling mouseup event.
+// Handle mouseup event.
 canvas.addEventListener('mouseup', function(event) {
   if(selectedVertex !== null){
     selectedVertex.movable = false;
@@ -401,7 +412,7 @@ canvas.addEventListener('mouseup', function(event) {
 }, false);
 
 
-// Handling mouseWheel event.
+// Handle mouseWheel event.
 canvas.addEventListener('mousewheel', function(event) {
   clear();
   if(event.deltaY < 0){
@@ -437,3 +448,6 @@ document.querySelector('#help').addEventListener('click', function() {
     visible = !visible;
   }
 }, false);
+
+//Initialize backgroud color.
+clear();
