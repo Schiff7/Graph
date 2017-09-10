@@ -5,6 +5,11 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+// Shadow
+ctx.shadowOffsetX = 15;
+ctx.shadowOffsetY = 15;
+ctx.shadowBlur = 14;
+ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
 // Object Vertex.
 var Vertex = function(x, y, radius, value, oldValue) {
   this.value = value;
@@ -175,7 +180,7 @@ function charsMap(o){
 
 // Clear the canvas.
 function clear() {
-  ctx.fillStyle = '#f1f1f1';
+  ctx.fillStyle = '#eee';
   ctx.fillRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
   //ctx.clearRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
 }
