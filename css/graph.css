@@ -1,0 +1,66 @@
+  /* /css/graph.css */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  html {
+    overflow: hidden;
+  }
+  .interact {
+    position: absolute;
+  }
+  .interact span {
+    display: block;
+    height: 25px;
+    user-select: none;
+  }
+  .interact div {
+    padding: 5px;
+  }
+  .interact input {
+    height: 25px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  .interact button {
+    color: #fff;
+    border-radius: 3px;
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    cursor: pointer;
+    user-select: none;
+  }
+  #submit {
+    background-color: #337ab7;
+    border: 1px solid #ffffff;
+  }
+  #submit:hover {
+    background-color: #245580;
+  }
+  #surprise {
+    border: 1px solid #ffffff;
+    background-color: #d9534f;
+  }
+  #surprise:hover {
+    background-color: #b92c28;
+  }
+  #help {
+    border: 1px solid #ffffff;
+    background-color: #5cb85c;
+  }
+  #help:hover {
+    background-color: #4cae4c;
+  }
+  .help {
+    position: fixed;
+    top: 0;
+    right: 0;
+    transition: all .3s;
+    display: none;
+  }
+  #palette {
+    height: 300px;
+    overflow-y: auto;
+  }

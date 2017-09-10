@@ -1,108 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title></title>
-  <style type="text/css">
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html {
-      overflow: hidden;
-    }
-    .interact {
-      position: absolute;
-    }
-    .interact span {
-      display: block;
-      height: 25px;
-      user-select: none;
-    }
-    .interact div {
-      padding: 5px;
-    }
-    .interact input {
-      height: 25px;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-    }
-    .interact button {
-      color: #fff;
-      border-radius: 3px;
-      padding: 5px 10px;
-      font-size: 12px;
-      line-height: 1.5;
-      cursor: pointer;
-      user-select: none;
-    }
-    #submit {
-      background-color: #337ab7;
-      border: 1px solid #ffffff;
-    }
-    #submit:hover {
-      background-color: #245580;
-    }
-    #surprise {
-      border: 1px solid #ffffff;
-      background-color: #d9534f;
-    }
-    #surprise:hover {
-      background-color: #b92c28;
-    }
-    #help {
-      border: 1px solid #ffffff;
-      background-color: #5cb85c;
-    }
-    #help:hover {
-      background-color: #4cae4c;
-    }
-    .help {
-      position: fixed;
-      top: 0;
-      right: 0;
-      transition: all .3s;
-      display: none;
-    }
-    #palette {
-      height: 300px;
-      overflow-y: auto;
-    }
-  </style>
-</head>
-<body>
-<div class="interact">
-  <div>
-    <span>SET</span>
-    <input type="text" id="set" value="1,2,3">
-  </div>
-  <div>
-    <span>GROUP</span>
-    <input type="text" id="group" value="1,12,123,132,23,13">
-  </div>
-  <div>
-    <span>SUBGROUP</span>
-    <input type="text" id="subGroup" value="12,132,13">
-  </div>
-  <div>
-    <span>INITIAL SCALE</span>
-    <input type="text" id="scale" value="100">
-  </div>
-  <div>
-    <button id="submit">Submit</button>
-    <button id="surprise">Surprise</button>
-    <button id="help">Help</button>
-  </div>
-  <div id="palette">
-  </div>
-</div>
-<div class="help">
-    <p>考虑集合S上的置换群G(X,*), 其中“*”为置换的乘法运算,集合A为X的子集,求Cayley图C<sub>G</sub>(A).</p>
-    <p>Submit ==> 在SET中输入S,在GROUP中输入X(X中置换采用二元置换的循环表示),在SUBGROUP中输入A,格式如示例所示,注意全角与半角符号.</p>
-    <p>Surprise ==> 生成以SET框中的输入为元素的集合上的对称群,并生成该群上的Cayley图,此时GROUP输入框的数据将被自动填充.</p>
-</div>
-<canvas id="canvas"></canvas>
-<script type="text/javascript">
+// /js/graph.js
+
 // Canvas.
 var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
@@ -121,6 +18,7 @@ var Vertex = function(x, y, radius, value, oldValue) {
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, true);
     ctx.closePath();
+    ctx.strokeStyle = '#000000';
     ctx.strokeText(this.oldValue,this.x + 10, this.y - 10);
     ctx.fillStyle = this.color;
     ctx.fill();
@@ -159,10 +57,8 @@ var Edge = function(start, end, color) {
     ctx.closePath();
     ctx.restore();
     ctx.stroke();
-    ctx.strokeStyle = '#000000';
   }
 }
-
 
 // Transfer the cyclic permutation expression to another expression that can be easily oprated by the program.
 function transfer (arr, str) {
@@ -176,7 +72,7 @@ function transfer (arr, str) {
         break;
       }
     }
-    if(str.search(arr[i]) == -1){
+    if(str.search(arr[i]) === -1){
       result += arr[i];
       continue;
     }
@@ -185,7 +81,7 @@ function transfer (arr, str) {
         break;
       }
     }
-    if(_str[j].search(arr[i]) == _str[j].length-1) {
+    if(_str[j].search(arr[i]) === _str[j].length-1) {
       result +=_str[j].charAt(0);
       continue;
     }
@@ -447,7 +343,7 @@ var muFactor = {
 canvas.addEventListener('mousedown', function(event) {
   const {clientX, clientY} = event;
   copyOfVertexes = [];
-  for(var i in vertexes){
+  for(var i = 0; i < vertexes.length; i++){
     if(Math.sqrt(Math.pow(clientX - vertexes[i].x*(Math.pow(muFactor.value, muFactor.n)), 2) + Math.pow(clientY - vertexes[i].y*(Math.pow(muFactor.value, muFactor.n)), 2)) < vertexes[i].radius * 1.5*(Math.pow(muFactor.value, muFactor.n))){
       vertexes[i].movable = true;
       selectedVertex = vertexes[i];
@@ -455,7 +351,7 @@ canvas.addEventListener('mousedown', function(event) {
       break;
     }
     copyOfVertexes.push({x: vertexes[i].x, y: vertexes[i].y});
-    if(i == vertexes.length - 1){
+    if(i === vertexes.length - 1){
       shift = {x: clientX, y: clientY, movable: true};
     }
   }
@@ -470,10 +366,10 @@ canvas.addEventListener('mousemove', function(event) {
     selectedVertex.x = clientX;
     selectedVertex.y = clientY;
     selectedVertex.draw();
-    for(var j in unselectedVertexes) {
+    for(var j = 0; j < unselectedVertexes.length; j++) {
       unselectedVertexes[j].draw();
     }
-    for(var k in edges) {
+    for(var k = 0; k < edges.length; k++) {
       edges[k].drawWithArrow();
     }
   }
@@ -481,14 +377,14 @@ canvas.addEventListener('mousemove', function(event) {
     clear();
     var deltaX = (clientX - shift.x/Math.pow(muFactor.value, muFactor.n));
     var deltaY = (clientY - shift.y/Math.pow(muFactor.value, muFactor.n));
-    for(var j in unselectedVertexes) {
+    for(var j = 0; j < unselectedVertexes.length; j++) {
       unselectedVertexes[j].x = copyOfVertexes[j].x;
       unselectedVertexes[j].x += deltaX;
       unselectedVertexes[j].y = copyOfVertexes[j].y;
       unselectedVertexes[j].y += deltaY;
       unselectedVertexes[j].draw();
     }
-    for(var k in edges) {
+    for(var k = 0; k < edges.length; k++) {
       edges[k].drawWithArrow();
     }
   }
@@ -511,19 +407,19 @@ canvas.addEventListener('mousewheel', function(event) {
   if(event.deltaY < 0){
     ctx.transform(muFactor.value,0,0,muFactor.value,0,0);
     muFactor.n += 1;
-    for(var j in unselectedVertexes) {
+    for(var j = 0; j < unselectedVertexes.length; j++) {
       unselectedVertexes[j].draw();
     }
-    for(var k in edges) {
+    for(var k = 0; k < edges.length; k++) {
       edges[k].drawWithArrow();
     }
   }else {
     ctx.transform(1/muFactor.value,0,0,1/muFactor.value,0,0);
     muFactor.n -= 1;
-    for(var j in unselectedVertexes) {
+    for(var j = 0; j < unselectedVertexes.length; j++) {
       unselectedVertexes[j].draw();
     }
-    for(var k in edges) {
+    for(var k = 0; k < edges.length; k++) {
       edges[k].drawWithArrow();
     }
   }
@@ -541,7 +437,3 @@ document.querySelector('#help').addEventListener('click', function() {
     visible = !visible;
   }
 }, false);
-
-</script>
-</body>
-</html>
