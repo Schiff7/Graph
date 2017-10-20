@@ -5,12 +5,14 @@ var canvas = document.getElementById('canvas');
 var ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+
 // Shadow
 ctx.shadowOffsetX = 15;
 ctx.shadowOffsetY = 15;
 ctx.shadowBlur = 14;
 ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-// Object Vertex.
+
+// Vertex construction.
 var Vertex = function(x, y, radius, value, oldValue) {
   this.value = value;
   this.oldValue = oldValue;
@@ -30,7 +32,8 @@ var Vertex = function(x, y, radius, value, oldValue) {
     ctx.fill();
   }
 }
-// Object Edge.
+
+// Edge construction.
 var Edge = function(start, end, color) {
   this.start = start;
   this.end = end;
@@ -68,7 +71,12 @@ var Edge = function(start, end, color) {
   }
 }
 
-// Transfer the cyclic permutation expression to another expression that can be easily oprated by the program.
+/**
+ * Transfer the cyclic permutation expression to another expression that can be easily 
+ * operated by the program.
+ * @param {Array} arr A set that generates the symmetric group. 
+ * @param {string} str The cyclic permutation.
+ */
 function transfer (arr, str) {
   var result = '';
   var _str = str.split('|');
@@ -98,7 +106,11 @@ function transfer (arr, str) {
   return result;
 }
 
-// Oposite to the transfer();
+/**
+ * Oposite to the transfer();
+ * @param {Array} _arr A set that generates the symmetric group.
+ * @param {string} str The expression that can be easily operated by the program.
+ */
 function reverse (_arr, str) {
   // A copy of _arr.
   var arr = _arr.slice(0);
@@ -111,7 +123,7 @@ function reverse (_arr, str) {
   var unFound = true;
   while(arr.length > 0) {
     i = 0;
-    if(arr[i] === str[i]){
+    if(arr[i] === str[i]) {
         str = str.replace(str[i], '');
         arr.splice(i, 1);
         continue;
@@ -138,8 +150,12 @@ function reverse (_arr, str) {
   return result;
 }
 
-
-// Operation of the symmetric group.
+/**
+ * Operation of the symmetric group.
+ * @param {Array} arr A set that generates the symmetric group.
+ * @param {string} l Expression on the left side.
+ * @param {string} r Expression on the right side.
+ */
 function opt(arr, l, r) {
   var _l = '';
   var result = '';
@@ -152,9 +168,13 @@ function opt(arr, l, r) {
   return result;
 }
 
-// To get a symetric group by providng a string.
-// AKA to get all the arranges of a string.
-// ... From the internet.
+
+/**
+ * To get a symetric group by providng a string.
+ * AKA to get all the arranges of a string. 
+ * ... From the internet.
+ * @param {string} o 
+ */
 function charsMap(o){
   // Remove space and duplicate characters.
   o = (o+"").replace(/(\w)(?=\w*\1)/g,"").replace(/\s+/g,"");
@@ -180,8 +200,10 @@ function charsMap(o){
 
 // Clear the canvas.
 function clear() {
+  // Setting background color.
   ctx.fillStyle = '#eee';
   ctx.fillRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
+  // Without backgound color.
   //ctx.clearRect(0,0,canvas.width/(Math.pow(muFactor.value, muFactor.n)),canvas.height/(Math.pow(muFactor.value, muFactor.n)));
 }
 
@@ -353,7 +375,7 @@ var shift = {
 var muFactor = {
   value: 1.05,
   n: 0,
-  multiplicative:1
+  multiplicative: 1
 }
 
 // Handle mousedown event. 
